@@ -48,5 +48,5 @@ The backend mock code follows strictly object-oriented design and clean coding p
 
 1. Clone this repository and run the `LocalMockServer` class in your preferred IDE (the server will start on port `8080`).
 2. Import the collection and environment `.json` files from the `/postman` directory into Postman.
-3. Right-click the `Scenario: New Customer Onboarding` folder and select **Run folder**.
+3. Right-click the `Core Banking API - End-to-End Tests` folder and select **Run**.
 4. The entire scenario will execute automatically, and all test assertions will pass successfully.
