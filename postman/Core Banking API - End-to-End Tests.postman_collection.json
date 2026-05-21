@@ -1,0 +1,454 @@
+{
+  "info": {
+    "_postman_id": "ae0fa9d9-c028-41d9-b66c-9331a8f72b56",
+    "name": "Core Banking API - End-to-End Tests",
+    "description": "### Welcome to Postman! This is your first collection. \n\nCollections are your starting point for building and testing APIs. You can use this one to:\n\n• Group related requests\n• Test your API in real-world scenarios\n• Document and share your requests\n\nUpdate the name and overview whenever you’re ready to make it yours.\n\n[Learn more about Postman Collections.](https://learning.postman.com/docs/collections/collections-overview/)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "53770091",
+    "_collection_link": "https://go.postman.co/collection/53770091-ae0fa9d9-c028-41d9-b66c-9331a8f72b56?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Happy Path - Customer Onboarding",
+      "item": [
+        {
+          "name": "Register new customer",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// 1. Definicja bazy polskich imion i nazwisk z podziałem na płeć\r",
+                  "const maleFirstNames = [\"Jan\", \"Piotr\", \"Krzysztof\", \"Andrzej\", \"Tomasz\", \"Michał\", \"Marcin\", \"Jakub\", \"Adam\", \"Łukasz\"];\r",
+                  "const femaleFirstNames = [\"Anna\", \"Maria\", \"Katarzyna\", \"Małgorzata\", \"Agnieszka\", \"Krystyna\", \"Barbara\", \"Ewa\", \"Elżbieta\", \"Magdalena\"];\r",
+                  "\r",
+                  "const maleLastNames = [\"Kowalski\", \"Nowak\", \"Wiśniewski\", \"Wójcik\", \"Kowalczyk\", \"Kamiński\", \"Lewandowski\", \"Zieliński\", \"Szymański\", \"Woźniak\"];\r",
+                  "const femaleLastNames = [\"Kowalska\", \"Nowak\", \"Wiśniowiecka\", \"Wójcik\", \"Kowalczyk\", \"Kamińska\", \"Lewandowska\", \"Zielińska\", \"Szymańska\", \"Woźniak\"];\r",
+                  "\r",
+                  "// 2. Losowanie płci (0 - kobieta, 1 - mężczyzna)\r",
+                  "const isMale = Math.floor(Math.random() * 2);\r",
+                  "\r",
+                  "// 3. Wybór imienia i nazwiska na podstawie płci\r",
+                  "const firstName = isMale ? maleFirstNames[Math.floor(Math.random() * maleFirstNames.length)] : femaleFirstNames[Math.floor(Math.random() * femaleFirstNames.length)];\r",
+                  "const lastName = isMale ? maleLastNames[Math.floor(Math.random() * maleLastNames.length)] : femaleLastNames[Math.floor(Math.random() * femaleLastNames.length)];\r",
+                  "\r",
+                  "// 4. Generowanie adresu e-mail na podstawie imienia i nazwiska (oczyszczanie z polskich znaków)\r",
+                  "const cleanText = (text) => text.toLowerCase().normalize(\"NFD\").replace(/[\\u0300-\\u036f]/g, \"\").replace(/ł/g, \"l\");\r",
+                  "const email = `${cleanText(firstName)}.${cleanText(lastName)}@example-bank.pl`;\r",
+                  "\r",
+                  "// 5. Generowanie hasła i zapisanie danych tekstowych do zmiennych Postmana\r",
+                  "pm.environment.set(\"random_first_name\", firstName);\r",
+                  "pm.environment.set(\"random_last_name\", lastName);\r",
+                  "pm.environment.set(\"random_email\", email);\r",
+                  "pm.environment.set(\"random_password\", Math.random().toString(36).substring(2, 10) + \"A1!\");\r",
+                  "\r",
+                  "// 6. FUNKCJA GENERUJĄCA POPRAWNY PESEL\r",
+                  "function generatePesel(isMaleGender) {\r",
+                  "    // Losowy rok (1950 - 2005)\r",
+                  "    const year = Math.floor(Math.random() * (2005 - 1950 + 1)) + 1950;\r",
+                  "    const month = Math.floor(Math.random() * 12) + 1;\r",
+                  "    const day = Math.floor(Math.random() * 28) + 1; // Dla uproszczenia max 28 dni\r",
+                  "\r",
+                  "    let yy = year.toString().slice(-2);\r",
+                  "    let mm = month < 10 ? \"0\" + month : month.toString();\r",
+                  "    let dd = day < 10 ? \"0\" + day : day.toString();\r",
+                  "\r",
+                  "    // Korekta miesiąca dla osób urodzonych po 2000 roku\r",
+                  "    if (year >= 2000) {\r",
+                  "        mm = (parseInt(mm) + 20).toString();\r",
+                  "    }\r",
+                  "\r",
+                  "    // Losowe 3 cyfry serii\r",
+                  "    const serial = Math.floor(100 + Math.random() * 900).toString();\r",
+                  "\r",
+                  "    // Cyfra płci (dziewiąta cyfra): parzysta dla kobiet, nieparzysta dla mężczyzn\r",
+                  "    const genderDigits = isMaleGender ? [1, 3, 5, 7, 9] : [0, 2, 4, 6, 8];\r",
+                  "    const genderDigit = genderDigits[Math.floor(Math.random() * genderDigits.length)].toString();\r",
+                  "\r",
+                  "    const peselWithoutControl = yy + mm + dd + serial + genderDigit;\r",
+                  "    \r",
+                  "    // Obliczanie cyfry kontrolnej (Wagi: 1 3 7 9 1 3 7 9 1 3)\r",
+                  "    const weights = [1, 3, 7, 9, 1, 3, 7, 9, 1, 3];\r",
+                  "    let sum = 0;\r",
+                  "    for (let i = 0; i < 10; i++) {\r",
+                  "        sum += parseInt(peselWithoutControl[i]) * weights[i];\r",
+                  "    }\r",
+                  "    \r",
+                  "    const controlDigit = (10 - (sum % 10)) % 10;\r",
+                  "    \r",
+                  "    return peselWithoutControl + controlDigit.toString();\r",
+                  "}\r",
+                  "\r",
+                  "// 7. Generowanie i zapisanie numeru PESEL do zmiennej\r",
+                  "const generatedPesel = generatePesel(isMale);\r",
+                  "pm.environment.set(\"generated_pesel\", generatedPesel);\r",
+                  "\r",
+                  "// Opcjonalne: Wyświetlenie danych w konsoli Postmana (przydatne do debugowania)\r",
+                  "console.log(`Wygenerowano: ${firstName} ${lastName}, Płeć męska: ${!!isMale}, Email: ${email}, PESEL: ${generatedPesel}`);\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Should return 201 Created when customer is registered\",  () => {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});\r",
+                  "\r",
+                  "const responseData = pm.response.json();\r",
+                  "\r",
+                  "const email = responseData.email;\r",
+                  "const password = responseData.password;\r",
+                  "const userId = responseData.id;\r",
+                  "\r",
+                  "pm.environment.set(\"registered_email\", email);\r",
+                  "pm.environment.set(\"registered_password\", password);\r",
+                  "pm.environment.set(\"customer_id\", userId);\r",
+                  "\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"firstName\": \"{{random_first_name}}\",\r\n  \"lastName\": \"{{random_last_name}}\",\r\n  \"email\": \"{{random_email}}\",\r\n  \"pesel\": \"{{generated_pesel}}\",\r\n  \"password\": \"{{random_password}}\"\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customers"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Log in customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Should return 200 OK when customer is logged in\", () => {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Should successfully extract token from response\", () => {\r",
+                  "    const responseData = pm.response.json();\r",
+                  "    const token = responseData.token;\r",
+                  "    \r",
+                  "    pm.expect(token).to.not.be.undefined; \r",
+                  "    pm.environment.set(\"token\", token);\r",
+                  "});\r",
+                  "\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"{{registered_email}}\",\r\n  \"password\": \"{{registered_password}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Open bank account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Should return 201 Created when account is opened\", () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "",
+                  "const responseData = pm.response.json();",
+                  "const iban = responseData.IBAN;",
+                  "",
+                  "pm.environment.set(\"registered_iban\", iban);",
+                  "",
+                  "",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"customerId\": \"{{customer_id}}\",\r\n  \"accountType\": \"ROR\",\r\n  \"currency\": \"PLN\"\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/accounts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts"
+              ]
+            },
+            "description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+          },
+          "response": []
+        },
+        {
+          "name": "Fetch account balance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Should return 200 OK when fetching balance\", () => {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Should return valid financial data schema and active status\", () => {\r",
+                  "    const responseData = pm.response.json();\r",
+                  "    \r",
+                  "    pm.expect(responseData.balance).to.be.a('number');\r",
+                  "    pm.expect(responseData.currency).to.eql('PLN');\r",
+                  "    pm.expect(responseData.status).to.eql('ACTIVE');\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/accounts/:accountNumber/balance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                ":accountNumber",
+                "balance"
+              ],
+              "variable": [
+                {
+                  "key": "accountNumber",
+                  "value": "{{registered_iban}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Unhappy Paths - Security & Validation",
+      "item": [
+        {
+          "name": "Open account - Unauthorized check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Should return 401 Unauthorized when token is missing\", () => {\r",
+                  "    pm.response.to.have.status(401);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Should return correct error object structure\", () => {\r",
+                  "    const responseData = pm.response.json();\r",
+                  "    pm.expect(responseData.error).to.eql(\"Unauthorized\");\r",
+                  "    pm.expect(responseData.message).to.eql(\"Brak autoryzacji. Wymagany poprawny token Bearer.\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"customerId\": \"{{customer_id}}\",\r\n  \"accountType\": \"ROR\",\r\n  \"currency\": \"PLN\"\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/accounts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
