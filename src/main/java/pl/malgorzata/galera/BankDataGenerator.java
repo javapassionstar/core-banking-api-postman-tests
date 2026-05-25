@@ -2,13 +2,13 @@ package pl.malgorzata.galera;
 
 import org.iban4j.CountryCode;
 import org.iban4j.Iban;
+
 import java.util.UUID;
 
 public final class BankDataGenerator {
 
-    // Prywatny konstruktor blokuje możliwość stworzenia obiektu tej klasy (częsta praktyka dla klas Utility)
     private BankDataGenerator() {
-        throw new UnsupportedOperationException("To jest klasa narzędziowa i nie można tworzyć jej instancji.");
+        throw new UnsupportedOperationException("This is a utility class and should not be instantiated.");
     }
 
     public static String generateToken() {

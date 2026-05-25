@@ -21,7 +21,6 @@ public class ServerBuilder {
 
     public void registerCustomerEndpoint() throws IOException {
         server.createContext("/api/v1/customers", httpExchange -> {
-            // POPRAWKA: Jeśli metoda jest niepoprawna, natychmiast przerywamy (return)
             if (!isMethodValid(httpExchange, "POST")) return;
 
             String requestBody;
@@ -44,7 +43,6 @@ public class ServerBuilder {
 
     public void logInEndpoint() throws IOException {
         server.createContext("/api/v1/auth/login", httpExchange -> {
-            // POPRAWKA: Przerywamy w przypadku złej metody HTTP
             if (!isMethodValid(httpExchange, "POST")) return;
 
             String response = "{\"token\": \"" + generateToken() + "\"}";
@@ -61,7 +59,6 @@ public class ServerBuilder {
             String path = httpExchange.getRequestURI().getPath();
             String method = httpExchange.getRequestMethod();
 
-            // 1. OBSŁUGA GET (Pobranie salda) -> /api/v1/accounts/[numer]/balance
             if ("GET".equalsIgnoreCase(method) && path.endsWith("/balance")) {
 
                 String authHeader = httpExchange.getRequestHeaders().getFirst("Authorization");
@@ -81,9 +78,7 @@ public class ServerBuilder {
                 try (OutputStream os = httpExchange.getResponseBody()) {
                     os.write(response.getBytes(StandardCharsets.UTF_8));
                 }
-            }
-            // 2. OBSŁUGA POST (Tworzenie konta) -> /api/v1/accounts
-            else if ("POST".equalsIgnoreCase(method) && path.equals("/api/v1/accounts")) {
+            } else if ("POST".equalsIgnoreCase(method) && path.equals("/api/v1/accounts")) {
 
                 String authHeader = httpExchange.getRequestHeaders().getFirst("Authorization");
                 if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -98,9 +93,7 @@ public class ServerBuilder {
                 try (OutputStream os = httpExchange.getResponseBody()) {
                     os.write(fakeIbanResponse.getBytes(StandardCharsets.UTF_8));
                 }
-            }
-            // Obsługa sytuacji, gdy ktoś wpisze zły adres lub metodę (np. DELETE /accounts)
-            else {
+            } else {
                 httpExchange.sendResponseHeaders(404, 0);
                 httpExchange.getResponseBody().close();
             }
@@ -123,7 +116,6 @@ public class ServerBuilder {
         return true;
     }
 
-    //Wydzielenie powtarzającego się kodu dla błędu 401 (Zasada DRY - Don't Repeat Yourself)
     private void sendUnauthorizedResponse(HttpExchange httpExchange) throws IOException {
         String errorResponse = "{\n  \"error\": \"Unauthorized\",\n  \"message\": \"Brak autoryzacji. Wymagany poprawny token Bearer.\"\n}";
         httpExchange.getResponseHeaders().add("Content-Type", "application/json");
