@@ -41,7 +41,7 @@ public class ServerBuilder {
         });
     }
 
-    public void logInEndpoint() throws IOException {
+    public void loginEndpoint() throws IOException {
         server.createContext("/api/v1/auth/login", httpExchange -> {
             if (!isMethodValid(httpExchange, "POST")) return;
 
@@ -117,7 +117,7 @@ public class ServerBuilder {
     }
 
     private void sendUnauthorizedResponse(HttpExchange httpExchange) throws IOException {
-        String errorResponse = "{\n  \"error\": \"Unauthorized\",\n  \"message\": \"Brak autoryzacji. Wymagany poprawny token Bearer.\"\n}";
+        String errorResponse = "{\n  \"error\": \"Unauthorized\",\n  \"message\": \"Authorization token is missing or invalid.\"\n}";
         httpExchange.getResponseHeaders().add("Content-Type", "application/json");
         httpExchange.sendResponseHeaders(401, errorResponse.getBytes(StandardCharsets.UTF_8).length);
         try (OutputStream os = httpExchange.getResponseBody()) {

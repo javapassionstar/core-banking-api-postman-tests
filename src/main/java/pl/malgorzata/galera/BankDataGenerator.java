@@ -8,7 +8,8 @@ import java.util.UUID;
 public final class BankDataGenerator {
 
     private BankDataGenerator() {
-        throw new UnsupportedOperationException("This is a utility class and should not be instantiated.");
+        throw new UnsupportedOperationException(
+                "This is a utility class and should not be instantiated.");
     }
 
     public static String generateToken() {

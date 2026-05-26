@@ -5,7 +5,7 @@ public class LocalMockServer {
 
         ServerBuilder serverBuilder = new ServerBuilder();
         serverBuilder.registerCustomerEndpoint();
-        serverBuilder.logInEndpoint();
+        serverBuilder.loginEndpoint();
         serverBuilder.openAccountAndGetBalanceEndpoints();
         serverBuilder.runServer();
     }
