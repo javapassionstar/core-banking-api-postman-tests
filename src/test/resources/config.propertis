@@ -1,0 +1,3 @@
+# Environment Configuration
+base.uri=http://localhost
+base.port=8080

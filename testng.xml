@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suite name="API Automation Suite" parallel="tests" thread-count="2">
+
+    <test name="Core Banking API Tests">
+        <classes>
+            <class name="pl.malgorzata.galera.tests.CustomerRegistrationTests"/>
+        </classes>
+    </test>
+</suite>
